@@ -1,0 +1,26 @@
+# ERP de Escolas — deploy isolado.
+# Mesmo banco supabase (auth/Kong) da infra. Porta pública 4002.
+services:
+  app:
+    build:
+      context: .
+      args:
+        VITE_SUPABASE_URL: ${VITE_SUPABASE_URL}
+        VITE_SUPABASE_PUBLISHABLE_KEY: ${VITE_SUPABASE_PUBLISHABLE_KEY}
+    image: escolas-crm:latest
+    pull_policy: never
+    container_name: escolas-app
+    restart: unless-stopped
+    ports:
+      - "4002:3000"   # URL pública (tunnel) → localhost:4002
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+    networks:
+      - escolas_network
+
+networks:
+  escolas_network:
+    driver: bridge
