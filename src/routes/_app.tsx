@@ -11,6 +11,7 @@ import {
   Menu,
   X,
   Building2,
+  Trophy,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { RequireAuth } from "@/components/require-auth";
@@ -39,6 +40,7 @@ function AppLayout() {
         { to: "/turmas", label: "Turmas", icon: BookOpen },
         { to: "/professores", label: "Professores", icon: GraduationCap },
         { to: "/mensalidades", label: "Mensalidades", icon: Wallet },
+        { to: "/campeonatos", label: "Campeonatos", icon: Trophy },
       ];
 
   const currentPath = routerState.location.pathname;

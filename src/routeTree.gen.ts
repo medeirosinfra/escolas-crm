@@ -15,6 +15,7 @@ import { Route as AppIndexRouteImport } from './routes/_app/index'
 import { Route as AppTurmasRouteImport } from './routes/_app/turmas'
 import { Route as AppProfessoresRouteImport } from './routes/_app/professores'
 import { Route as AppMensalidadesRouteImport } from './routes/_app/mensalidades'
+import { Route as AppCampeonatosRouteImport } from './routes/_app/campeonatos'
 import { Route as AppAlunosRouteImport } from './routes/_app/alunos'
 import { Route as AppMasterIndexRouteImport } from './routes/_app/master/index'
 import { Route as AppAlunosIdRouteImport } from './routes/_app/alunos.$id'
@@ -48,6 +49,11 @@ const AppMensalidadesRoute = AppMensalidadesRouteImport.update({
   path: '/mensalidades',
   getParentRoute: () => AppRoute,
 } as any)
+const AppCampeonatosRoute = AppCampeonatosRouteImport.update({
+  id: '/campeonatos',
+  path: '/campeonatos',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppAlunosRoute = AppAlunosRouteImport.update({
   id: '/alunos',
   path: '/alunos',
@@ -68,6 +74,7 @@ export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
   '/login': typeof LoginRoute
   '/alunos': typeof AppAlunosRouteWithChildren
+  '/campeonatos': typeof AppCampeonatosRoute
   '/mensalidades': typeof AppMensalidadesRoute
   '/professores': typeof AppProfessoresRoute
   '/turmas': typeof AppTurmasRoute
@@ -77,6 +84,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/alunos': typeof AppAlunosRouteWithChildren
+  '/campeonatos': typeof AppCampeonatosRoute
   '/mensalidades': typeof AppMensalidadesRoute
   '/professores': typeof AppProfessoresRoute
   '/turmas': typeof AppTurmasRoute
@@ -89,6 +97,7 @@ export interface FileRoutesById {
   '/_app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
   '/_app/alunos': typeof AppAlunosRouteWithChildren
+  '/_app/campeonatos': typeof AppCampeonatosRoute
   '/_app/mensalidades': typeof AppMensalidadesRoute
   '/_app/professores': typeof AppProfessoresRoute
   '/_app/turmas': typeof AppTurmasRoute
@@ -102,6 +111,7 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/alunos'
+    | '/campeonatos'
     | '/mensalidades'
     | '/professores'
     | '/turmas'
@@ -111,6 +121,7 @@ export interface FileRouteTypes {
   to:
     | '/login'
     | '/alunos'
+    | '/campeonatos'
     | '/mensalidades'
     | '/professores'
     | '/turmas'
@@ -122,6 +133,7 @@ export interface FileRouteTypes {
     | '/_app'
     | '/login'
     | '/_app/alunos'
+    | '/_app/campeonatos'
     | '/_app/mensalidades'
     | '/_app/professores'
     | '/_app/turmas'
@@ -179,6 +191,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppMensalidadesRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/campeonatos': {
+      id: '/_app/campeonatos'
+      path: '/campeonatos'
+      fullPath: '/campeonatos'
+      preLoaderRoute: typeof AppCampeonatosRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/alunos': {
       id: '/_app/alunos'
       path: '/alunos'
@@ -217,6 +236,7 @@ const AppAlunosRouteWithChildren = AppAlunosRoute._addFileChildren(
 
 interface AppRouteChildren {
   AppAlunosRoute: typeof AppAlunosRouteWithChildren
+  AppCampeonatosRoute: typeof AppCampeonatosRoute
   AppMensalidadesRoute: typeof AppMensalidadesRoute
   AppProfessoresRoute: typeof AppProfessoresRoute
   AppTurmasRoute: typeof AppTurmasRoute
@@ -226,6 +246,7 @@ interface AppRouteChildren {
 
 const AppRouteChildren: AppRouteChildren = {
   AppAlunosRoute: AppAlunosRouteWithChildren,
+  AppCampeonatosRoute: AppCampeonatosRoute,
   AppMensalidadesRoute: AppMensalidadesRoute,
   AppProfessoresRoute: AppProfessoresRoute,
   AppTurmasRoute: AppTurmasRoute,

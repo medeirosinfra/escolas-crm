@@ -76,6 +76,32 @@ export interface Mensalidade {
   aluno?: { nome: string } | null;
 }
 
+// ---------------- CAMPEONATOS ----------------
+
+export interface Campeonato {
+  id: string;
+  tenant_id: string;
+  nome: string;
+  descricao?: string | null;
+  data_inicio?: string | null;
+  data_fim?: string | null;
+  valor_contribuicao: number;
+  status: "ativo" | "encerrado" | "cancelado";
+  created_at: string;
+}
+
+export interface CampeonatoParticipante {
+  id: string;
+  tenant_id: string;
+  campeonato_id: string;
+  aluno_id: string;
+  turma_id?: string | null;
+  pago: boolean;
+  created_at: string;
+  aluno?: { nome: string; cpf?: string | null } | null;
+  turma?: { nome: string } | null;
+}
+
 // ---------------- TURMAS ----------------
 
 export async function listTurmas(): Promise<Turma[]> {
@@ -338,4 +364,55 @@ export async function getResumoEscola(): Promise<{
     aReceber,
     recebidoMes,
   };
+}
+
+// ---------------- CAMPEONATOS (CRUD + Participantes) ----------------
+
+export async function listCampeonatos(): Promise<Campeonato[]> {
+  const { data, error } = await supabase.from("campeonatos").select("*").order("created_at", { ascending: false });
+  if (error) throw new Error(`Erro ao listar campeonatos: ${error.message}`);
+  return (data ?? []) as Campeonato[];
+}
+
+export async function createCampeonato(input: Partial<Campeonato>): Promise<Campeonato> {
+  const { data, error } = await supabase.from("campeonatos").insert(input).select().single();
+  if (error || !data) throw new Error(`Erro ao criar campeonato: ${error?.message}`);
+  return data as Campeonato;
+}
+
+export async function updateCampeonato(id: string, input: Partial<Campeonato>): Promise<Campeonato> {
+  const { data, error } = await supabase.from("campeonatos").update(input).eq("id", id).select().single();
+  if (error || !data) throw new Error(`Erro ao atualizar campeonato: ${error?.message}`);
+  return data as Campeonato;
+}
+
+export async function deleteCampeonato(id: string): Promise<void> {
+  const { error } = await supabase.from("campeonatos").delete().eq("id", id);
+  if (error) throw new Error(`Erro ao excluir campeonato: ${error.message}`);
+}
+
+export async function listParticipantes(campeonatoId: string): Promise<CampeonatoParticipante[]> {
+  const { data, error } = await supabase
+    .from("campeonato_participantes")
+    .select("*, aluno:alunos(nome, cpf), turma:turmas(nome)")
+    .eq("campeonato_id", campeonatoId)
+    .order("created_at", { ascending: false });
+  if (error) throw new Error(`Erro ao listar participantes: ${error.message}`);
+  return (data ?? []) as CampeonatoParticipante[];
+}
+
+export async function addParticipante(input: { campeonato_id: string; aluno_id: string; turma_id?: string | null; pago?: boolean }): Promise<CampeonatoParticipante> {
+  const { data, error } = await supabase.from("campeonato_participantes").insert(input).select("*, aluno:alunos(nome, cpf), turma:turmas(nome)").single();
+  if (error || !data) throw new Error(`Erro ao adicionar participante: ${error?.message}`);
+  return data as CampeonatoParticipante;
+}
+
+export async function removeParticipante(id: string): Promise<void> {
+  const { error } = await supabase.from("campeonato_participantes").delete().eq("id", id);
+  if (error) throw new Error(`Erro ao remover participante: ${error.message}`);
+}
+
+export async function togglePagamentoParticipante(id: string, pago: boolean): Promise<void> {
+  const { error } = await supabase.from("campeonato_participantes").update({ pago }).eq("id", id);
+  if (error) throw new Error(`Erro ao atualizar pagamento: ${error.message}`);
 }
