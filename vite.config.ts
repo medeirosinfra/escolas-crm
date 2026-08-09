@@ -26,10 +26,11 @@ export default defineConfig({
       "/login/**": {
         headers: { "cache-control": "no-cache, no-store, must-revalidate", "cdn-cache-control": "no-cache, no-store" },
       },
-      // Proxy: /supabase/* → Supabase local (Kong 54321) — IP do HOST pois dentro do
-      // container 127.0.0.1 é ele mesmo.
+      // Proxy: /supabase/* → Supabase ESCOLAS isolado (Kong 5442) — IP do HOST.
+      // IMPORTANTE: porta 5442 = Kong dedicado do ERP de Escolas (escolas_db).
+      // NUNCA 54321 (essa é do CRM/Luana).
       "/supabase/**": {
-        proxy: "http://172.16.0.50:54321/**",
+        proxy: "http://172.16.0.50:5442/**",
       },
     },
   },

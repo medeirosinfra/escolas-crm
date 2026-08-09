@@ -1,0 +1,119 @@
+# =============================================================================
+# Instância Supabase DEDICADA ao ERP de Escolas
+# -----------------------------------------------------------------------------
+# Isola Auth/REST/Storage/Realtime/Kong do ERP de Escolas no banco 'escolas_db',
+# exatamente como o deskcomm (deskcomm-crm/compose/supabase-deskcomm.yml).
+#   docker compose -f compose/supabase-escolas.yml up -d
+#   (requer envs: SUPABASE_DB_PASSWORD, SUPABASE_JWT_SECRET, SUPABASE_ANON_KEY,
+#                 SUPABASE_SERVICE_KEY, SUPABASE_SECRET_KEY, APP_DOMAIN)
+# =============================================================================
+
+services:
+  # ------------------------------------------------------------ Kong gateway
+  kong:
+    image: kong/kong:3.9.1
+    container_name: escolas-supabase-kong
+    restart: unless-stopped
+    ports:
+      - "5442:8000"                # HTTP (borda HTTPS via tunnel)
+      - "5443:8443"                # HTTPS (kong self-signed)
+    environment:
+      KONG_DATABASE: "off"
+      KONG_DECLARATIVE_CONFIG: /etc/kong/kong.yml
+      KONG_PLUGINS: request-transformer,cors,key-auth,acl,basic-auth,request-termination,ip-restriction,post-function
+      KONG_PROXY_ACCESS_LOG: /dev/stdout combined
+      KONG_PROXY_ERROR_LOG: /dev/stderr
+      KONG_PROXY_LISTEN: "0.0.0.0:8000, 0.0.0.0:8443 ssl, 0.0.0.0:443 ssl"
+      KONG_ADMIN_LISTEN: "0.0.0.0:8001, 0.0.0.0:8444 ssl"
+    volumes:
+      - ./kong/escolas-kong.yml:/etc/kong/kong.yml:ro
+    depends_on:
+      - rest
+      - auth
+      - storage
+    networks:
+      - esc_default
+    healthcheck:
+      test: ["CMD", "kong", "health"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+
+  # ------------------------------------------------------------------- Rest
+  rest:
+    image: postgrest/postgrest:v14.12
+    container_name: escolas-rest
+    restart: unless-stopped
+    environment:
+      PGRST_DB_URI: "postgres://authenticator:${SUPABASE_DB_PASSWORD}@supabase-db:5432/escolas_db"
+      PGRST_DB_SCHEMAS: "public,storage"
+      PGRST_DB_EXTRA_SEARCH_PATH: "public,extensions"
+      PGRST_JWT_SECRET: ${SUPABASE_JWT_SECRET}
+      PGRST_DB_ANON_ROLE: anon
+      PGRST_DB_MAX_ROWS: "1000"
+      PGRST_DB_USE_LEGACY_GUCS: "false"
+      PGRST_PROXY_URI: "https://escolas.${APP_DOMAIN}"
+    networks:
+      - esc_default
+
+  # ------------------------------------------------------------ Auth (gotrue)
+  auth:
+    image: supabase/gotrue:v2.189.0
+    container_name: escolas-auth
+    restart: unless-stopped
+    environment:
+      GOTRUE_API_HOST: 0.0.0.0
+      GOTRUE_API_PORT: "9999"
+      GOTRUE_DB_DRIVER: postgres
+      GOTRUE_DB_MIGRATIONS_PATH: /usr/local/etc/auth/migrations
+      GOTRUE_DB_DATABASE_URL: "postgres://supabase_auth_admin:${SUPABASE_DB_PASSWORD}@supabase-db:5432/escolas_db"
+      GOTRUE_JWT_SECRET: ${SUPABASE_JWT_SECRET}
+      GOTRUE_JWT_AUD: authenticated
+      GOTRUE_JWT_ADMIN_ROLES: service_role
+      GOTRUE_JWT_DEFAULT_GROUP_NAME: authenticated
+      GOTRUE_JWT_ISSUER: "https://escolas.${APP_DOMAIN}"
+      GOTRUE_URI_ALLOW_LIST: ""
+      GOTRUE_DISABLE_SIGNUP: "false"
+      GOTRUE_SITE_URL: "https://escolas.${APP_DOMAIN}"
+      GOTRUE_EXTERNAL_EMAIL_ENABLED: "true"
+      GOTRUE_EXTERNAL_ANONYMOUS_USERS_ENABLED: "false"
+      GOTRUE_MAILER_AUTOCONFIRM: "true"
+      GOTRUE_MAILER_URLPATHS_INVITE: /invite
+      GOTRUE_MAILER_URLPATHS_CONFIRMATION: /verify
+      GOTRUE_MAILER_URLPATHS_RECOVERY: /recovery
+      GOTRUE_MAILER_URLPATHS_EMAIL_CHANGE: /user
+      GOTRUE_SMTP_ADMIN_EMAIL: contato@${APP_DOMAIN}
+      GOTRUE_SMTP_SENDER_NAME: "ERP Escolas"
+      GOTRUE_SMTP_HOST: mailpit
+      GOTRUE_SMTP_PORT: "1025"
+      API_EXTERNAL_URL: "https://escolas.${APP_DOMAIN}"
+    networks:
+      - esc_default
+
+  # ----------------------------------------------------------------- Storage
+  storage:
+    image: supabase/storage-api:v1.60.4
+    container_name: escolas-storage
+    restart: unless-stopped
+    environment:
+      AUTH_JWT_SECRET: ${SUPABASE_JWT_SECRET}
+      ANON_KEY: ${SUPABASE_ANON_KEY}
+      SERVICE_KEY: ${SUPABASE_SERVICE_KEY}
+      DATABASE_URL: "postgres://supabase_storage_admin:${SUPABASE_DB_PASSWORD}@supabase-db:5432/escolas_db"
+      FILE_STORAGE_BACKEND_PATH: /var/lib/storage
+      STORAGE_BACKEND: file
+      FILE_SIZE_LIMIT: "52428800"
+      POSTGREST_URL: "http://rest:3000"
+      ENABLE_IMAGE_TRANSFORMATION: "false"
+    volumes:
+      - escolas-storage:/var/lib/storage
+    networks:
+      - esc_default
+
+volumes:
+  escolas-storage:
+
+networks:
+  esc_default:
+    name: escolas_supabase_net
+    external: true

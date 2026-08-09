@@ -1,0 +1,35 @@
+# =============================================================================
+# Kong declarativo — instância Supabase DEDICADA ao ERP de Escolas
+# Roteia /auth, /rest, /storage para os containers dedicados (escolas_db).
+# Chaves = as mesmas do cluster (JWT/role globais do postgres).
+# =============================================================================
+_format_version: '3.0'
+_transform: true
+
+consumers:
+  - username: 'anon'
+    keyauth_credentials:
+      - key: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzg1NDY2Mjc3LCJleHAiOjE4MTcwMDIyNzd9.ZiyLk4CH8kyDE2IpsXeWwQ0Bfw6NgGGC1cISZ9x_yIQ'
+  - username: 'service_role'
+    keyauth_credentials:
+      - key: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoic2VydmljZV9yb2xlIiwiaXNzIjoic3VwYWJhc2UiLCJpYXQiOjE3ODU0NjYyNzcsImV4cCI6MTgxNzAwMjI3N30.vfEMO3kFDbM0WrOVkzXOV8kBttEtsyGIQPB1rx8rpFk'
+
+services:
+  - name: auth
+    url: http://escolas-auth:9999
+    routes:
+      - name: auth-all
+        paths:
+          - /auth/v1
+  - name: rest
+    url: http://escolas-rest:3000
+    routes:
+      - name: rest-all
+        paths:
+          - /rest/v1
+  - name: storage
+    url: http://escolas-storage:5000
+    routes:
+      - name: storage-all
+        paths:
+          - /storage/v1
